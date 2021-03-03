@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.findSeams = void 0;
-function findSeams(data, width, height, removeCount) {
+function findSeams(data, width, height, removeCount, onRemoveSeam) {
     var energySum = new Uint32Array(width * height);
     var remove = new Uint32Array(height);
     var energy = calcEnergy(data, width, height);
@@ -48,6 +48,9 @@ function findSeams(data, width, height, removeCount) {
         workingData = removeSeam(workingData, width, height, remove);
         energy = recalcEnergy(workingData, width - 1, height, energy, remove);
         width--;
+        if (onRemoveSeam) {
+            onRemoveSeam(workingData, width);
+        }
     }
     return workingData;
 }

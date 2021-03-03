@@ -3,6 +3,7 @@ export function findSeams(
   width: number,
   height: number,
   removeCount: number,
+  onRemoveSeam?: (data: Uint8ClampedArray, width: number) => void,
 ): Uint8ClampedArray {
   let energySum = new Uint32Array(width * height);
   let remove = new Uint32Array(height);
@@ -59,6 +60,10 @@ export function findSeams(
     workingData = removeSeam(workingData, width, height, remove);
     energy = recalcEnergy(workingData, width - 1, height, energy, remove);
     width--;
+
+    if (onRemoveSeam) {
+      onRemoveSeam(workingData, width);
+    }
   }
 
   return workingData;

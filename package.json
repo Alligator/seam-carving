@@ -2,6 +2,7 @@
   "name": "seam-carving",
   "version": "0.0.1",
   "main": "build/index.js",
+  "files": ["build/*"],
   "scripts": {
     "build": "tsc",
     "build-and-run": "tsc && node build/index.js"

@@ -87,23 +87,27 @@ function dbgEnergy(energy: Uint32Array): Uint8ClampedArray {
   return newData;
 }
 
-function dbgEnergySum(ctx: CanvasRenderingContext2D, energySum: Uint32Array) {
-  const width = ctx.canvas.width;
-  const height = ctx.canvas.height;
-
+function dbgEnergySum(energySum: Uint32Array) {
+  const newData = new Uint8ClampedArray(energySum.length * 4);
+  const buf32 = new Uint32Array(newData.buffer);
   let nrgMax = -Infinity;
+
   for (let i = 0; i < energySum.length; i++) {
     if (energySum[i] > nrgMax) {
       nrgMax = energySum[i];
     }
   }
 
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width - 1; x++) {
-      ctx.fillStyle = `hsl(0, 100%, ${(energySum[y * width + x + y] / nrgMax * 100).toFixed(2)}%`;
-      ctx.fillRect(x, y, 1, 1);
-    }
+  for (let i = 0; i < energySum.length; i++) {
+    const nrg = (energySum[i] / nrgMax) * 255;
+    buf32[i] = 
+      (0xff << 24) |
+      (nrg <<  16) |
+      (nrg <<   8) |
+      nrg;
   }
+
+  return newData;
 }
 
 // remove seams in remove from data, returning a new array.

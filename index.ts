@@ -166,14 +166,23 @@ function calcEnergy(data: Uint8ClampedArray, width: number, height: number): Uin
     const x = i % width;
     const y = Math.floor(i / width);
 
-    if (x === 0 || x === width - 1 || y === 0) {
-      // border pixels
-      energy[i] = 100;
-      continue;
+    let hdiff;
+    if (x === 0) {
+      hdiff = diff(buf32[i], buf32[i + 1]);
+    } else if (x == width - 1) {
+      hdiff = diff(buf32[i - 1], buf32[i]);
+    } else {
+      hdiff = diff(buf32[i - 1], buf32[i + 1]);
     }
 
-    const hdiff = diff(buf32[i - 1], buf32[i + 1]);
-    const vdiff = diff(buf32[i - width], buf32[i + width]);
+    let vdiff;
+    if (y === 0) {
+      vdiff = diff(buf32[i], buf32[i + width]);
+    } else if (y === height - 1) {
+      vdiff = diff(buf32[i - width], buf32[i]);
+    } else {
+      vdiff = diff(buf32[i - width], buf32[i + width]);
+    }
 
     energy[i] = hdiff + vdiff;
   }

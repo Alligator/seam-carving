@@ -5,7 +5,7 @@
   "files": ["build/*"],
   "scripts": {
     "build": "tsc",
-    "build-and-run": "tsc && node build/index.js"
+    "build-and-run": "tsc && cd canvas-test && node index.js"
   },
   "devDependencies": {
     "@types/node": "^14.14.31",

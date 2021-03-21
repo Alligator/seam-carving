@@ -11,54 +11,11 @@ export function findSeams(
   let workingData = data.slice();
 
   for (let i = 0; i < removeCount; i++) {
-    // populate the first row in energySum
-    for (let j = 0; j < energy.length; j++) {
-      energySum[j] = energy[j];
-    }
-
-    // populate the rest of the rows
-    for (let y = 1; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const left = energySum[(y - 1) * width + Math.max(x - 1, 0)];
-        const mid = energySum[(y - 1) * width + x];
-        const right = energySum[(y - 1) * width + Math.min(x + 1, width - 1)];
-        energySum[y * width + x] = energy[y * width + x] + Math.min(left, mid, right);
-      }
-    }
-
-    // find the min on the last row
-    let min = Infinity;
-    let minx = 0;
-    for (let x = 0; x < width; x++) {
-      if (energySum[(height - 1) * width + x] < min) {
-        min = energySum[(height - 1) * width + x];
-        minx = x;
-      }
-    }
-
-    remove[(height - 1)] = minx;
-
-    // walk from the bottom up picking the min each time
-    for (let y = height - 1; y >= 1; y--) {
-      const leftx = Math.max(minx - 1, 0);
-      const left = energySum[(y - 1) * width + leftx];
-
-      const mid = energySum[(y - 1) * width + minx];
-
-      const rightx = Math.min(minx + 1, width - 1);
-      const right = energySum[(y - 1) * width + rightx];
-
-      if (left < mid && left < right) {
-        minx = leftx;
-      } else if (right < mid && right < left) {
-        minx = rightx;
-      }
-
-      remove[(y - 1)] = minx;
-    }
-
+    calcEnergySum(energySum, energy, width, height);
+    findMinSeam(remove, energySum, width, height);
     workingData = removeSeam(workingData, width, height, remove);
     energy = recalcEnergy(workingData, width - 1, height, energy, remove);
+
     width--;
 
     if (onRemoveSeam) {
@@ -66,48 +23,8 @@ export function findSeams(
     }
   }
 
+  workingData = workingData.slice(0, width * height * 4);
   return workingData;
-}
-
-// debug functions
-// replace the return of findSeams to return energy or energySum instead
-function dbgEnergy(energy: Uint32Array): Uint8ClampedArray {
-  const newData = new Uint8ClampedArray(energy.length * 4);
-  const buf32 = new Uint32Array(newData.buffer);
-
-  for (let i = 0; i < energy.length; i++) {
-    const nrg = energy[i];
-    buf32[i] = 
-      (0xff << 24) |
-      (nrg <<  16) |
-      (nrg <<   8) |
-      nrg;
-  }
-
-  return newData;
-}
-
-function dbgEnergySum(energySum: Uint32Array) {
-  const newData = new Uint8ClampedArray(energySum.length * 4);
-  const buf32 = new Uint32Array(newData.buffer);
-  let nrgMax = -Infinity;
-
-  for (let i = 0; i < energySum.length; i++) {
-    if (energySum[i] > nrgMax) {
-      nrgMax = energySum[i];
-    }
-  }
-
-  for (let i = 0; i < energySum.length; i++) {
-    const nrg = (energySum[i] / nrgMax) * 255;
-    buf32[i] = 
-      (0xff << 24) |
-      (nrg <<  16) |
-      (nrg <<   8) |
-      nrg;
-  }
-
-  return newData;
 }
 
 // remove seams in remove from data, returning a new array.
@@ -234,3 +151,105 @@ function recalcEnergy(
   return energy;
 }
 
+function calcEnergySum(
+  energySum: Uint32Array,
+  energy: Uint32Array,
+  width: number,
+  height: number,
+) {
+  // populate the first row in energySum
+  for (let j = 0; j < energy.length; j++) {
+    energySum[j] = energy[j];
+  }
+
+  // populate the rest of the rows
+  for (let y = 1; y < height; y++) {
+    // const removex = remove[y];
+    // for (let x = Math.max(removex - y, 0); x < Math.min(removex + y, width); x++) {
+    for (let x = 0; x < width; x++) {
+      const left = energySum[(y - 1) * width + Math.max(x - 1, 0)];
+      const mid = energySum[(y - 1) * width + x];
+      const right = energySum[(y - 1) * width + Math.min(x + 1, width - 1)];
+      energySum[y * width + x] = energy[y * width + x] + Math.min(left, mid, right);
+    }
+  }
+}
+
+function findMinSeam(
+  remove: Uint32Array,
+  energySum: Uint32Array,
+  width: number,
+  height: number,
+) {
+  // find the min on the last row
+  let min = Infinity;
+  let minx = 0;
+  for (let x = 0; x < width; x++) {
+    if (energySum[(height - 1) * width + x] < min) {
+      min = energySum[(height - 1) * width + x];
+      minx = x;
+    }
+  }
+
+  remove[(height - 1)] = minx;
+
+  // walk from the bottom up picking the min each time
+  for (let y = height - 1; y >= 1; y--) {
+    const leftx = Math.max(minx - 1, 0);
+    const left = energySum[(y - 1) * width + leftx];
+
+    const mid = energySum[(y - 1) * width + minx];
+
+    const rightx = Math.min(minx + 1, width - 1);
+    const right = energySum[(y - 1) * width + rightx];
+
+    if (left < mid && left < right) {
+      minx = leftx;
+    } else if (right < mid && right < left) {
+      minx = rightx;
+    }
+
+    remove[(y - 1)] = minx;
+  }
+}
+
+// debug functions
+// replace the return of findSeams to return energy or energySum instead
+function dbgEnergy(energy: Uint32Array): Uint8ClampedArray {
+  const newData = new Uint8ClampedArray(energy.length * 4);
+  const buf32 = new Uint32Array(newData.buffer);
+
+  for (let i = 0; i < energy.length; i++) {
+    const nrg = energy[i];
+    buf32[i] = 
+      (0xff << 24) |
+      (nrg <<  16) |
+      (nrg <<   8) |
+      nrg;
+  }
+
+  return newData;
+}
+
+function dbgEnergySum(energySum: Uint32Array) {
+  const newData = new Uint8ClampedArray(energySum.length * 4);
+  const buf32 = new Uint32Array(newData.buffer);
+  let nrgMax = -Infinity;
+
+  for (let i = 0; i < energySum.length; i++) {
+    if (energySum[i] > nrgMax) {
+      nrgMax = energySum[i];
+    }
+  }
+
+  for (let i = 0; i < energySum.length; i++) {
+    const nrg = (energySum[i] / nrgMax) * 255;
+    buf32[i] = 
+      (0xff << 24) |
+      (nrg <<  16) |
+      (nrg <<   8) |
+      nrg;
+  }
+
+  return newData;
+}

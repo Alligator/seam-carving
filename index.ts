@@ -111,7 +111,6 @@ function dbgEnergySum(energySum: Uint32Array) {
 }
 
 // remove seams in remove from data, returning a new array.
-// TODO mutate data instead of allocating a new array
 function removeSeam(
   data: Uint8ClampedArray,
   width: number,
@@ -119,8 +118,6 @@ function removeSeam(
   remove: Uint32Array,
 ): Uint8ClampedArray {
   const data32 = new Uint32Array(data.buffer);
-  const newData = new Uint8ClampedArray((width - 1) * height * 4);
-  const buf32 = new Uint32Array(newData.buffer);
 
   let offset = 0;
   for (let y = 0; y < height; y++) {
@@ -130,13 +127,13 @@ function removeSeam(
         // pixels been removed, skip over it
         offset++;
       }
-      if (x < width) {
-        buf32[y * (width - 1) + x] = data32[y * (width - 1) + x + offset];
+      if (x < width && offset > 0) {
+        data32[y * (width - 1) + x] = data32[y * (width - 1) + x + offset];
       }
     }
   }
 
-  return newData;
+  return data;
 }
 
 function diff(pixel1: number, pixel2: number): number {

@@ -39,15 +39,20 @@ function removeSeam(
   let offset = 0;
   for (let y = 0; y < height; y++) {
     let removex = remove[y];
-    for (let x = 0; x < width; x++) {
-      if (x === removex) {
-        // pixels been removed, skip over it
-        offset++;
-      }
-      if (x < width && offset > 0) {
-        data32[y * (width - 1) + x] = data32[y * (width - 1) + x + offset];
-      }
-    }
+    // copy left half
+    data32.copyWithin(
+      y * (width - 1),
+      y * (width - 1) + offset,
+      y * (width - 1) + offset + removex,
+    );
+    // skip removex
+    offset++;
+    // copy right half
+    data32.copyWithin(
+      y * (width - 1) + removex,
+      y * (width - 1) + offset + removex,
+      y * (width - 1) + (width - 1) + offset,
+    );
   }
 
   return data;
@@ -158,7 +163,7 @@ function calcEnergySum(
   height: number,
 ) {
   // populate the first row in energySum
-  for (let j = 0; j < energy.length; j++) {
+  for (let j = 0; j < width; j++) {
     energySum[j] = energy[j];
   }
 

@@ -27,6 +27,18 @@ export function findSeams(
   return workingData;
 }
 
+// filthy branchless max and min
+// if x - y is positive, (x - y) >> 31 will be all 0s
+// if x - y is negative, (x - y) >> 31 will be all 1s
+// & that with x - y to either get 0 or x - y
+function fastMin(x: number, y: number): number {
+  return y + ((x - y) & ((x - y) >> 31));
+}
+
+function fastMax(x: number, y: number): number {
+  return x - ((x - y) & ((x - y) >> 31));
+}
+
 // remove seams in remove from data, returning a new array.
 function removeSeam(
   data: Uint8ClampedArray,
@@ -175,14 +187,28 @@ function calcEnergySum(
 
   // populate the rest of the rows
   for (let y = 1; y < height; y++) {
-    // const removex = remove[y];
-    // for (let x = Math.max(removex - y, 0); x < Math.min(removex + y, width); x++) {
-    for (let x = 0; x < width; x++) {
-      const left = energySum[(y - 1) * width + Math.max(x - 1, 0)];
-      const mid = energySum[(y - 1) * width + x];
-      const right = energySum[(y - 1) * width + Math.min(x + 1, width - 1)];
-      energySum[y * width + x] = energy[y * width + x] + Math.min(left, mid, right);
+    let x = 0;
+
+    // left edge
+    const lmid = energySum[(y - 1) * width + x];
+    const lright = energySum[(y - 1) * width + x + 1];
+    energySum[y * width + x] = energy[y * width + x] + fastMin(lmid, lright);
+
+    for (x = 1; x < width - 1; x++) {
+      const prev = energy[y * width + x];
+
+      const index = (y - 1) * width + x - 1;
+      const left = energySum[index];
+      const mid = energySum[index + 1];
+      const right = energySum[index + 2];
+
+      energySum[y * width + x] = prev + fastMin(fastMin(left, mid), right);
     }
+
+    // right edge
+    const rleft = energySum[(y - 1) * width + x - 1];
+    const rmid = energySum[(y - 1) * width + x];
+    energySum[y * width + x] = energy[y * width + x] + fastMin(rleft, rmid);
   }
 }
 
@@ -206,12 +232,12 @@ function findMinSeam(
 
   // walk from the bottom up picking the min each time
   for (let y = height - 1; y >= 1; y--) {
-    const leftx = Math.max(minx - 1, 0);
+    const leftx = fastMax(minx - 1, 0);
     const left = energySum[(y - 1) * width + leftx];
 
     const mid = energySum[(y - 1) * width + minx];
 
-    const rightx = Math.min(minx + 1, width - 1);
+    const rightx = fastMin(minx + 1, width - 1);
     const right = energySum[(y - 1) * width + rightx];
 
     if (left < mid && left < right) {

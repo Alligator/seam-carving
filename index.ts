@@ -127,30 +127,36 @@ function recalcEnergy(
   let offset = 0;
   for (let y = 0; y < height; y++) {
     let removex = removed[y];
-    for (let x = 0; x < width; x++) {
-      if (x === removex) {
-        // pixels been removed, skip over it
-        offset++;
-      }
 
+    // copy left half
+    energy.copyWithin(
+      y * width,
+      y * width + offset,
+      y * width + offset + removex - 1,
+    );
+    // skip removex
+    offset++;
+    // copy right half
+    energy.copyWithin(
+      y * width + removex + 1,
+      y * width + offset + removex + 1,
+      y * width + offset + width,
+    );
+
+    // recalc pixels around seam
+    for (let x = removex - 1; x <= removex; x++) {
       let nrg = energy[y * width + x + offset];
-      if (x >= removex - 1 && x <= removex) {
-        if (x === 0 || x === width - 1 || y === 0) {
-          // border pixels
-          nrg = nrg;
-        } else {
-          const hdiff = diff(buf32[y * width + x - 1], buf32[y * width + x + 1]);
-          const vdiff = diff(buf32[(y - 1) * width + x], buf32[(y + 1) * width + x]);
-          nrg = hdiff + vdiff;
-        }
+      if (x === 0 || x === width - 1 || y === 0) {
+        // border pixels
+        nrg = nrg;
+      } else {
+        const hdiff = diff(buf32[y * width + x - 1], buf32[y * width + x + 1]);
+        const vdiff = diff(buf32[(y - 1) * width + x], buf32[(y + 1) * width + x]);
+        nrg = hdiff + vdiff;
       }
       energy[y * width + x] = nrg;
     }
 
-    if (removex >= width) {
-      // case where a pixel on the removed edge is gone
-      offset++;
-    }
   }
 
   return energy;

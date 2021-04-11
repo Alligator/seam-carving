@@ -1,4 +1,4 @@
-export function findSeams(
+export function removeSeams(
   data: Uint8ClampedArray,
   width: number,
   height: number,

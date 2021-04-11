@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.findSeams = void 0;
-function findSeams(data, width, height, removeCount, onRemoveSeam) {
+exports.removeSeams = void 0;
+function removeSeams(data, width, height, removeCount, onRemoveSeam) {
     let energySum = new Uint32Array(width * height);
     let remove = new Uint32Array(height);
     let energy = calcEnergy(data, width, height);
@@ -19,7 +19,7 @@ function findSeams(data, width, height, removeCount, onRemoveSeam) {
     workingData = workingData.slice(0, width * height * 4);
     return workingData;
 }
-exports.findSeams = findSeams;
+exports.removeSeams = removeSeams;
 // filthy branchless max and min
 // if x - y is positive, (x - y) >> 31 will be all 0s
 // if x - y is negative, (x - y) >> 31 will be all 1s

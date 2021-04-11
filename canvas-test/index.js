@@ -1,6 +1,6 @@
 const fs = require('fs');
-const { createCanvas, Image, ImageData } = require('canvas');
-const { findSeams } = require('../');
+const { createCanvas, loadImage, ImageData } = require('canvas');
+const { removeSeams } = require('../');
 
 function go(img) {
   const canvas = createCanvas(img.width, img.height);
@@ -11,7 +11,7 @@ function go(img) {
   // const newWidth = Math.floor(img.width - 10);
   const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-  const newData = findSeams(imgData.data, canvas.width, canvas.height, img.width - newWidth);
+  const newData = removeSeams(imgData.data, canvas.width, canvas.height, img.width - newWidth);
   const newImgData = new ImageData(newData, newWidth, img.height);
 
   ctx.canvas.width = newWidth;
@@ -20,39 +20,38 @@ function go(img) {
 }
 
 const images = [
-  "dog.jpg",
-  "castle.jpg",
+  "dog.png",
+  "castle.png",
 ];
 
 function bench(filename) {
-  const runs = 5;
-  const runTimes = new Array(runs);
+  loadImage(filename).then((img) => {
+    const runs = 5;
+    const runTimes = new Array(runs);
 
-  const img = new Image();
-  img.src = filename;
+    const canvas = go(img);
+    fs.writeFileSync(`${filename}-out.png`, canvas.toBuffer('image/png'));
 
-  const canvas = go(img);
-  fs.writeFileSync(`${filename}-out.jpg`, canvas.toBuffer('image/jpeg'));
+    for (let i = 0; i < runs; i++) {
+      process.stdout.write(`\r\x1b[2K${i+1}/${runs}`);
+      const start = process.hrtime.bigint();
 
-  for (let i = 0; i < runs; i++) {
-    process.stdout.write(`\r\x1b[2K${i+1}/${runs}`);
-    const start = process.hrtime.bigint();
+      go(img);
 
-    go(img);
+      const elapsed = process.hrtime.bigint() - start;
+      runTimes[i] = Number(elapsed / 1000000n);
+    }
 
-    const elapsed = process.hrtime.bigint() - start;
-    runTimes[i] = Number(elapsed / 1000000n);
-  }
+    const avg = runTimes.reduce((acc, val) => acc + val, 0) / runs;
+    const min = Math.min.apply(null, runTimes);
+    const max = Math.max.apply(null, runTimes);
 
-  const avg = runTimes.reduce((acc, val) => acc + val, 0) / runs;
-  const min = Math.min.apply(null, runTimes);
-  const max = Math.max.apply(null, runTimes);
-
-  process.stdout.write('\r\x1b[2K');
-  console.log(filename);
-  console.log(`  min: ${min}ms`);
-  console.log(`  max: ${max}ms`);
-  console.log(`  avg: ${avg}ms\n`);
+    process.stdout.write('\r\x1b[2K');
+    console.log(filename);
+    console.log(`  min: ${min}ms`);
+    console.log(`  max: ${max}ms`);
+    console.log(`  avg: ${avg}ms\n`);
+  });
 }
 
 images.forEach(bench);

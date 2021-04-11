@@ -2,16 +2,13 @@ const fs = require('fs');
 const { createCanvas, Image, ImageData } = require('canvas');
 const { findSeams } = require('../');
 
-function go() {
-  console.log('running...');
-  const img = new Image();
-  img.src = 'img.jpg'
-
+function go(img) {
   const canvas = createCanvas(img.width, img.height);
   const ctx = canvas.getContext('2d');
   ctx.drawImage(img, 0, 0);
 
   const newWidth = Math.floor(img.width/2);
+  // const newWidth = Math.floor(img.width - 10);
   const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
   const newData = findSeams(imgData.data, canvas.width, canvas.height, img.width - newWidth);
@@ -19,10 +16,43 @@ function go() {
 
   ctx.canvas.width = newWidth;
   ctx.putImageData(newImgData, 0, 0);
-
-  fs.writeFileSync('output.jpg', canvas.toBuffer('image/jpeg'));
+  return canvas;
 }
 
-console.time('total');
-go();
-console.timeEnd('total');
+const images = [
+  "dog.jpg",
+  "castle.jpg",
+];
+
+function bench(filename) {
+  const runs = 5;
+  const runTimes = new Array(runs);
+
+  const img = new Image();
+  img.src = filename;
+
+  const canvas = go(img);
+  fs.writeFileSync(`${filename}-out.jpg`, canvas.toBuffer('image/jpeg'));
+
+  for (let i = 0; i < runs; i++) {
+    process.stdout.write(`\r\x1b[2K${i+1}/${runs}`);
+    const start = process.hrtime.bigint();
+
+    go(img);
+
+    const elapsed = process.hrtime.bigint() - start;
+    runTimes[i] = Number(elapsed / 1000000n);
+  }
+
+  const avg = runTimes.reduce((acc, val) => acc + val, 0) / runs;
+  const min = Math.min.apply(null, runTimes);
+  const max = Math.max.apply(null, runTimes);
+
+  process.stdout.write('\r\x1b[2K');
+  console.log(filename);
+  console.log(`  min: ${min}ms`);
+  console.log(`  max: ${max}ms`);
+  console.log(`  avg: ${avg}ms\n`);
+}
+
+images.forEach(bench);

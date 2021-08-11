@@ -106,7 +106,7 @@ function recalcEnergy(data, width, height, energy, removed) {
         energy.copyWithin(y * width + removex + 1, y * width + offset + removex + 1, y * width + offset + width);
         // recalc pixels around seam
         for (let x = removex - 1; x <= removex; x++) {
-            let nrg = energy[y * width + x + offset];
+            let nrg = energy[y * width + x];
             if (x === 0 || x === width - 1 || y === 0) {
                 // border pixels
                 nrg = nrg;

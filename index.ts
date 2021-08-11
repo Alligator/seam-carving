@@ -157,7 +157,7 @@ function recalcEnergy(
 
     // recalc pixels around seam
     for (let x = removex - 1; x <= removex; x++) {
-      let nrg = energy[y * width + x + offset];
+      let nrg = energy[y * width + x];
       if (x === 0 || x === width - 1 || y === 0) {
         // border pixels
         nrg = nrg;

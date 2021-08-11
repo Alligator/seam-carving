@@ -1,11 +1,11 @@
-import { createCanvas, loadImage, Image, ImageData, CanvasRenderingContext2D } from 'canvas';
+import { jpegVersion, createCanvas, loadImage, Image, ImageData, CanvasRenderingContext2D } from 'canvas';
 import { readdirSync, writeFileSync } from 'fs';
 import * as path from 'path';
 import {exec } from 'child_process';
 import { removeSeams } from '../';
 
 const imagePromises = readdirSync('images')
-  .filter((file) => file.endsWith('.png'))
+  .filter((file) => file.endsWith('.png') || jpegVersion && file.endsWith('jpg'))
   .map((file) => loadImage(path.join('images', file)));
 
 function reduceImage(imgData: ImageData, seamsToRemove: number): ImageData {
@@ -27,7 +27,7 @@ function showFile(path: string) {
     }
   }
 
-  exec(`${openCmd} "${path}"`);
+  exec(`${openCmd} ${path}`);
 }
 
 Promise.all(imagePromises).then((images) => {
@@ -35,7 +35,7 @@ Promise.all(imagePromises).then((images) => {
   const totalHeight = images.reduce((acc, val) => acc + val.height, 0);
   const margin = 10;
 
-  const canvas = createCanvas(longestWidth * 3, totalHeight);
+  const canvas = createCanvas(longestWidth * 2.25 + margin * 2 , totalHeight);
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = 'black';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
